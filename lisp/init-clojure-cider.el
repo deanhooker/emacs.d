@@ -13,6 +13,9 @@
     (add-hook 'cider-repl-mode-hook 'subword-mode)
     (add-hook 'cider-repl-mode-hook 'paredit-mode))
 
+  (with-eval-after-load 'clojure-ts-mode
+    (define-key clojure-ts-mode-map (kbd "C-c C-x C-x") #'cider))
+
   (require-package 'flycheck-clojure)
   (with-eval-after-load 'clojure-mode
     (with-eval-after-load 'cider

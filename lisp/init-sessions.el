@@ -41,6 +41,12 @@
 
 (add-hook 'after-init-hook 'session-initialize)
 
+(defun my/remove-killed-buffers-from-desktop ()
+  "Remove buffers that have been killed from `desktop-buffer-list`."
+  (setq desktop-buffer-locked-list nil)) ;; Ensure buffers aren't locked
+(add-hook 'kill-buffer-hook #'my/remove-killed-buffers-from-desktop)
+
+
 ;; save a bunch of variables to the desktop file
 ;; for lists specify the len of the maximal saved data also
 (setq desktop-globals-to-save
