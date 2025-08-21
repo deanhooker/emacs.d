@@ -16,11 +16,12 @@
     "Add PureScript-specific prettify symbols."
     (setq-local prettify-symbols-alist
                 '(("forall" . ?∀)
-                  ("->"    . ?→)
-                  ("=>"    . ?⇒)
-                  ("<-"    . ?←)
-                  ("<="    . ?≤)
-                  (">="    . ?≥))))
+                  ("->"     . ?→)
+                  ("=>"     . ?⇒)
+                  ("<-"     . ?←)
+                  ("<="     . ?≤)
+                  (">="     . ?≥)
+                  ("/="     . ?≠))))
 
   (add-hook 'purescript-mode-hook #'purescript-prettify-symbols)
   (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
