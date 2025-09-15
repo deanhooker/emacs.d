@@ -6,10 +6,59 @@
   ;; Basic editing
   (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)
 
-  ;; Auto-sort imports on save
   (add-hook 'purescript-mode-hook
             (lambda ()
-              (add-hook 'before-save-hook 'purescript-sort-imports nil t)))
+              (add-hook 'before-save-hook 'delete-trailing-whitespace)))
+
+  (defun my-purescript-sort-imports ()
+    "Sort PureScript imports, keep Prelude at the top, and place them
+right after the module declaration. Idempotent and preserves point."
+    (interactive)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        ;; Find module declaration
+        (unless (re-search-forward "^module[ \t]+[A-Za-z0-9_.']+[ \t]+where" nil t)
+          (error "No module declaration found"))
+        (forward-line) ;; go just after the module decl
+        (let ((insert-point (point))
+              prelude
+              (imports '()))
+
+          ;; Remove Prelude, if present
+          (while (re-search-forward "^import[ ]+Prelude.*$" nil t)
+            (setq prelude (or prelude (match-string 0)))
+            (replace-match ""))
+
+          ;; Remove all other imports
+          (goto-char insert-point)
+          (while (re-search-forward purescript-sort-imports-regexp nil t)
+            (push (match-string 0) imports)
+            (replace-match ""))
+
+          ;; Clean up extra blank lines
+          (goto-char insert-point)
+          (while (looking-at "^[ \t]*$")
+            (delete-region (point) (line-end-position))
+            (delete-char 1)) ;; remove newline
+
+          ;; Reinsert imports in canonical order
+          (goto-char insert-point)
+          (insert "\n")
+          (when prelude
+            (insert prelude "\n"))
+          (when (and prelude imports)
+            (insert "\n")) ;; one blank line between Prelude and rest
+          (when imports
+            (insert (mapconcat #'identity (sort imports #'string<) "\n") "\n")
+            (insert "\n"))))))
+
+
+  ;; Use it instead of the built-in version
+  (add-hook 'purescript-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook #'my-purescript-sort-imports nil t)))
 
   ;; Prettify symbols
   (defun purescript-prettify-symbols ()
@@ -24,6 +73,7 @@
                   ("/="     . ?≠))))
 
   (add-hook 'purescript-mode-hook #'purescript-prettify-symbols)
+
   (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
 
 
@@ -113,6 +163,10 @@
     (interactive)
     (purescript-spago-execute "npx spago run\n"))
 
+  (defun purescript-spago-start-repl ()
+    (interactive)
+    (purescript-spago-execute "npx spago repl\n"))
+
   (defvar-local purescript-auto-reload t
     "If non-nil, automatically reload modules in the REPL on save.")
 
@@ -136,7 +190,8 @@
   ;; Keybindings
   (with-eval-after-load 'purescript-mode
     (define-key purescript-mode-map (kbd "C-c r") 'purescript-spago-run)
-    (define-key purescript-mode-map (kbd "C-c b") 'purescript-toggle-auto-reload)))
+    (define-key purescript-mode-map (kbd "C-c b") 'purescript-toggle-auto-reload)
+    (define-key purescript-mode-map (kbd "C-c l") 'purescript-spago-start-repl)))
 
 (provide 'init-purescript)
 ;;; init-purescript.el ends here
